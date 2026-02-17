@@ -1,0 +1,186 @@
+/* @import "tw-animate-css"; */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Rebels";
+  src: url("/fonts/Rebels-Fett.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: 48 100% 97%;
+  --foreground: 30 25% 15%;
+  --card: 48 100% 92%;
+  --card-foreground: 30 25% 15%;
+  --popover: 48 100% 95%;
+  --popover-foreground: 30 25% 15%;
+  --primary: 48 100% 50%;
+  --primary-foreground: 30 25% 15%;
+  --secondary: 48 90% 70%;
+  --secondary-foreground: 30 25% 15%;
+  --muted: 48 80% 90%;
+  --muted-foreground: 30 15% 40%;
+  --accent: 48 100% 60%;
+  --accent-foreground: 30 25% 15%;
+  --border: 48 70% 80%;
+  --pop: 48 80% 88%;
+  --input: 48 70% 85%;
+  --ring: 48 100% 50%;
+
+  --success: 142 76% 36%;
+  --destructive: 0 84% 60%;
+  --warning: 45 93% 47%;
+
+  --chart-1: 48 100% 50%;
+  --chart-2: 45 95% 55%;
+  --chart-3: 50 100% 45%;
+  --chart-4: 43 100% 52%;
+  --chart-5: 48 90% 58%;
+  --sidebar: 48 100% 85%;
+  --sidebar-foreground: 30 25% 15%;
+  --sidebar-primary: 48 100% 50%;
+  --sidebar-primary-foreground: 30 25% 15%;
+  --sidebar-accent: 48 90% 75%;
+  --sidebar-accent-foreground: 30 25% 15%;
+  --sidebar-border: 48 70% 75%;
+  --sidebar-ring: 48 100% 50%;
+
+  --gap: 1rem;
+  --sides: 1rem;
+  --header-mobile: 3.8rem;
+  --header-height: 4.5rem;
+}
+
+.dark {
+  --background: 30 15% 12%;
+  --foreground: 48 80% 95%;
+  --card: 30 15% 15%;
+  --card-foreground: 48 80% 95%;
+  --popover: 30 15% 10%;
+  --popover-foreground: 48 80% 95%;
+  --primary: 48 100% 60%;
+  --primary-foreground: 30 15% 12%;
+  --secondary: 48 60% 30%;
+  --secondary-foreground: 48 80% 95%;
+  --muted: 30 10% 20%;
+  --muted-foreground: 48 40% 70%;
+  --accent: 48 100% 60% / 15%;
+  --accent-foreground: 48 80% 95%;
+  --border: 48 100% 60% / 20%;
+  --pop: 48 100% 60% / 10%;
+  --input: 48 100% 60% / 25%;
+  --ring: 48 100% 60%;
+
+  --success: 142 70% 50%;
+  --warning: 45 90% 55%;
+  --destructive: 0 70% 50%;
+
+  --chart-1: 48 100% 60%;
+  --chart-2: 45 95% 65%;
+  --chart-3: 50 100% 55%;
+  --chart-4: 43 90% 58%;
+  --chart-5: 48 85% 62%;
+
+  --sidebar: 30 15% 8%;
+  --sidebar-foreground: 48 80% 95%;
+  --sidebar-primary: 48 100% 60%;
+  --sidebar-primary-foreground: 30 15% 12%;
+  --sidebar-accent: 48 100% 60% / 12%;
+  --sidebar-accent-hover: 48 100% 60% / 20%;
+  --sidebar-accent-foreground: 48 80% 95%;
+  --sidebar-border: 48 100% 60% / 18%;
+  --sidebar-ring: 48 100% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-mono;
+  }
+}
+
+.recharts-cartesian-grid-vertical :first-child,
+.recharts-cartesian-grid-vertical :last-child {
+  opacity: 0;
+}
+
+@media (min-width: 1028px) {
+  html {
+    font-size: 0.7em;
+  }
+}
+
+@media (min-width: 1240px) and (max-width: 1920px) {
+  html {
+    font-size: 0.75em;
+  }
+}
+
+@media (min-width: 1920px) {
+  html {
+    font-size: 1em;
+  }
+}
+
+@media (min-width: 2160px) {
+  html {
+    font-size: 1.2em;
+  }
+}
+
+/* Stat Marquee Animations */
+@keyframes marquee-up {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes marquee-down {
+  0% {
+    transform: translate3d(0, -50%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes marquee-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1) translateY(0);
+  }
+  25% {
+    opacity: 0.4;
+    transform: scale(1.02) translateY(-1px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05) translateY(-2px);
+  }
+  75% {
+    opacity: 0.6;
+    transform: scale(1.02) translateY(-1px);
+  }
+}
+
+/* Hover interactions */
+.group:hover .animate-marquee-pulse {
+  animation-play-state: paused;
+}
+
+.group:hover .animate-marquee-up,
+.group:hover .animate-marquee-down {
+  animation-play-state: paused;
+}

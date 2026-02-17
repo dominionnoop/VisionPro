@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: aatron_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server:/app
+      # Mount model volumes or data if needed, similar to reference
+    environment:
+      - POSTGRES_DB=aatron_vision
+      - MQTT_BROKER=mqtt
+      - MQTT_PORT=1883
+    command: /bin/bash -c "chmod +x migrate.sh && ./migrate.sh && pip install paho-mqtt && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - postgres
+      - redis
+      - mqtt
+    # GPU Configuration - using runtime for better compatibility
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: docker/local/Dockerfile
+    container_name: aatron_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true
+      # Allow frontend to call backend internally during SSR/build if needed,
+      # but for client-side fetch it needs public URL.
+      # Wait, NEXT_PUBLIC_ variables are baked in at build time.
+      # Since we are running in dev mode, they are read at runtime.
+      # But browser needs localhost:8000.
+      # Only SSR needs backend:8000.
+      # Let's keep it simple for now, usually env is passed from host .env or defaults.
+    command: /bin/sh -c "npm install -g pnpm && pnpm install && npm run dev"
+    depends_on:
+      - backend
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: aatron_postgres
+    environment:
+      POSTGRES_USER: aatron
+      POSTGRES_PASSWORD: aatron_dev
+      POSTGRES_DB: aatron_vision
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: aatron_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: aatron_mqtt
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+volumes:
+  postgres_data:
+  redis_data:
+  client_node_modules:
+  mosquitto_data:
+  mosquitto_log:

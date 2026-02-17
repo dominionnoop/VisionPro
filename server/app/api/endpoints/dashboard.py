@@ -1,0 +1,226 @@
+from fastapi import APIRouter
+from typing import List, Dict, Any
+
+router = APIRouter()
+
+# --- Mock Data ---
+
+mock_dashboard_stats = [
+    {
+      "label": "ISSUES COMPLETED",
+      "value": "49%",
+      "description": "WEEKLY SCOPE",
+      "intent": "positive",
+      "icon": "gear",
+      "direction": "up"
+    },
+    {
+      "label": "MINUTES LOST",
+      "value": "642'",
+      "description": "IN MEETINGS AND RABBIT HOLES",
+      "intent": "negative",
+      "icon": "proccesor",
+      "direction": "down"
+    },
+    {
+      "label": "ACCIDENTS",
+      "value": "0",
+      "description": "THE CLIENT ALWAYS IS RIGHT",
+      "intent": "neutral",
+      "icon": "boom",
+      "tag": "4 weeks 🔥"
+    }
+]
+
+mock_chart_data = {
+    "week": [
+      { "date": "06/07", "sales": 50000, "spendings": 30000, "coffee": 10000 },
+      { "date": "07/07", "sales": 250000, "spendings": 15000, "coffee": 30000 },
+      { "date": "08/07", "sales": 200000, "spendings": 50000, "coffee": 25000 },
+      { "date": "09/07", "sales": 280000, "spendings": 60000, "coffee": 45000 },
+      { "date": "10/07", "sales": 120000, "spendings": 20000, "coffee": 15000 },
+      { "date": "11/07", "sales": 180000, "spendings": 55000, "coffee": 20000 },
+      { "date": "12/07", "sales": 500000, "spendings": 35000, "coffee": 20000 },
+      { "date": "13/07", "sales": 130000, "spendings": 60000, "coffee": 10000 }
+    ],
+    "month": [
+      { "date": "Jan", "spendings": 45000, "sales": 180000, "coffee": 25000 },
+      { "date": "Feb", "spendings": 30000, "sales": 120000, "coffee": 20000 },
+      { "date": "Mar", "spendings": 65000, "sales": 280000, "coffee": 35000 },
+      { "date": "Apr", "spendings": 25000, "sales": 160000, "coffee": 18000 },
+      { "date": "May", "spendings": 80000, "sales": 350000, "coffee": 45000 },
+      { "date": "Jun", "spendings": 40000, "sales": 90000, "coffee": 25000 },
+      { "date": "Jul", "spendings": 70000, "sales": 220000, "coffee": 40000 },
+      { "date": "Aug", "spendings": 55000, "sales": 170000, "coffee": 30000 },
+      { "date": "Sep", "spendings": 60000, "sales": 200000, "coffee": 35000 },
+      { "date": "Oct", "spendings": 35000, "sales": 140000, "coffee": 22000 },
+      { "date": "Nov", "spendings": 75000, "sales": 340000, "coffee": 38000 },
+      { "date": "Dec", "spendings": 90000, "sales": 420000, "coffee": 50000 }
+    ],
+    "year": [
+      { "date": "2020", "spendings": 280000, "sales": 580000, "coffee": 150000 },
+      { "date": "2021", "spendings": 320000, "sales": 650000, "coffee": 180000 },
+      { "date": "2022", "spendings": 450000, "sales": 950000, "coffee": 250000 },
+      { "date": "2023", "spendings": 200000, "sales": 520000, "coffee": 120000 },
+      { "date": "2024", "spendings": 380000, "sales": 820000, "coffee": 200000 }
+    ]
+}
+
+mock_ranking = [
+    {
+      "id": 1,
+      "name": "KRIMSON",
+      "handle": "@KRIMSON",
+      "streak": "2 WEEKS STREAK 🔥",
+      "points": 148,
+      "avatar": "/avatars/user_krimson.png",
+      "featured": True,
+      "subtitle": "2 WEEKS STREAK 🔥"
+    },
+    {
+      "id": 2,
+      "name": "MATI",
+      "handle": "@MATI",
+      "streak": "",
+      "points": 129,
+      "avatar": "/avatars/user_mati.png"
+    },
+    {
+      "id": 3,
+      "name": "PEK",
+      "handle": "@MATT",
+      "streak": "",
+      "points": 108,
+      "avatar": "/avatars/user_pek.png"
+    },
+    {
+      "id": 4,
+      "name": "JOYBOY",
+      "handle": "@JOYBOY",
+      "streak": "",
+      "points": 64,
+      "avatar": "/avatars/user_joyboy.png"
+    }
+]
+
+mock_security = [
+    {
+      "title": "GUARD BOTS",
+      "value": "124/124",
+      "status": "[RUNNING...]",
+      "variant": "success"
+    },
+    {
+      "title": "FIREWALL",
+      "value": "99.9%",
+      "status": "[BLOCKED]",
+      "variant": "success"
+    },
+    {
+      "title": "HTML WARNINGS",
+      "value": "12042",
+      "status": "[ACCESSIBILITY]",
+      "variant": "warning"
+    }
+]
+
+mock_notifications = [
+    {
+      "id": "notif-1",
+      "title": "PAYMENT RECEIVED",
+      "message": "Your payment to Rampant Studio has been processed successfully.",
+      "timestamp": "2024-07-10T13:39:00Z",
+      "type": "success",
+      "read": False,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-2",
+      "title": "INTRO: JOYCO STUDIO AND V0",
+      "message": "About us - We're a healthcare company focused on accessibility and innovation.",
+      "timestamp": "2024-07-10T13:35:00Z",
+      "type": "info",
+      "read": False,
+      "priority": "low"
+    },
+    {
+      "id": "notif-3",
+      "title": "SYSTEM UPDATE",
+      "message": "Security patches have been applied to all guard bots.",
+      "timestamp": "2024-07-10T12:15:00Z",
+      "type": "info",
+      "read": True,
+      "priority": "medium"
+    },
+    {
+      "id": "notif-4",
+      "title": "FIREWALL ALERT",
+      "message": "Blocked 247 suspicious connection attempts in the last hour.",
+      "timestamp": "2024-07-10T11:45:00Z",
+      "type": "warning",
+      "read": True,
+      "priority": "high"
+    }
+]
+
+mock_widget = {
+    "location": "Buenos Aires, Argentina",
+    "timezone": "UTC-3",
+    "temperature": "18°C",
+    "weather": "Partly Cloudy",
+    "date": "Wednesday, July 10th, 2025"
+}
+
+# --- Routes ---
+
+@router.get("/stats")
+def get_stats():
+    from app.services.stream_manager import stream_manager
+    stats = stream_manager.get_global_stats()
+    
+    return [
+        {
+            "label": "TOTAL INSPECTIONS",
+            "value": str(stats["total_inspections"]),
+            "description": "FRAMES PROCESSED",
+            "intent": "neutral",
+            "icon": "gear",
+            "direction": "up"
+        },
+        {
+            "label": "DEFECTS FOUND",
+            "value": str(stats["total_defects"]),
+            "description": "ISSUES DETECTED",
+            "intent": "negative" if stats["total_defects"] > 0 else "positive",
+            "icon": "boom",
+            "direction": "down" if stats["total_defects"] == 0 else "up"
+        },
+        {
+            "label": "ACTIVE STREAMS",
+            "value": str(stats["active_streams"]),
+            "description": "CAMERAS RUNNING",
+            "intent": "positive",
+            "icon": "proccesor",
+            "tag": "LIVE"
+        }
+    ]
+
+@router.get("/charts")
+def get_charts():
+    return mock_chart_data
+
+@router.get("/ranking")
+def get_ranking():
+    return mock_ranking
+
+@router.get("/security")
+def get_security():
+    return mock_security
+
+@router.get("/notifications")
+def get_notifications():
+    return mock_notifications
+
+@router.get("/widget")
+def get_widget():
+    return mock_widget
