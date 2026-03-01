@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aatron Backend API Reference</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header .base-url {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 4px;
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .content {
+            display: flex;
+            min-height: calc(100vh - 100px);
+        }
+
+        nav {
+            width: 250px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 100px);
+        }
+
+        nav h3 {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding-left: 10px;
+        }
+
+        nav ul {
+            list-style: none;
+        }
+
+        nav li {
+            margin: 5px 0;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            padding: 6px 12px;
+            display: block;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        nav a:hover {
+            background: #e8eaf6;
+            padding-left: 20px;
+        }
+
+        main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        h2:first-child {
+            margin-top: 0;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #333;
+            overflow-x: auto;
+        }
+
+        .endpoint.get {
+            border-left-color: #4CAF50;
+        }
+
+        .endpoint.post {
+            border-left-color: #2196F3;
+        }
+
+        .endpoint.put {
+            border-left-color: #FF9800;
+        }
+
+        .endpoint.delete {
+            border-left-color: #f44336;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 0.85em;
+            color: white;
+        }
+
+        .method.get {
+            background: #4CAF50;
+        }
+
+        .method.post {
+            background: #2196F3;
+        }
+
+        .method.put {
+            background: #FF9800;
+        }
+
+        .method.delete {
+            background: #f44336;
+        }
+
+        .response-codes {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-200 {
+            background: #4CAF50;
+        }
+
+        .status-201 {
+            background: #8BC34A;
+        }
+
+        .status-400 {
+            background: #FF9800;
+        }
+
+        .status-401 {
+            background: #f44336;
+        }
+
+        .status-404 {
+            background: #e91e63;
+        }
+
+        .status-500 {
+            background: #9C27B0;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .request-section, .response-section, .params-section {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .request-section h4, .response-section h4, .params-section h4 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .errors {
+            background: #fff3e0;
+            border-left: 4px solid #FF9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .errors h5 {
+            color: #E65100;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .errors ul {
+            margin-left: 20px;
+        }
+
+        .errors li {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .toc ol {
+            margin-left: 20px;
+        }
+
+        .toc li {
+            margin: 8px 0;
+        }
+
+        .toc a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .note {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .note strong {
+            color: #1565c0;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            background: #f0f0f0;
+        }
+
+        footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .search-box {
+            background: white;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+
+            nav {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+
+            main {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Aatron Backend API Reference</h1>
+            <div class="base-url">http://localhost:8000/api/v1</div>
+        </header>
+
+        <div class="content">
+            <nav>
+                <div class="search-box">
+                    <input type="text" id="apiSearch" placeholder="Search endpoints...">
+                </div>
+
+                <h3>📑 Navigation</h3>
+                <ul>
+                    <li><a href="#health-check">Health Check</a></li>
+                    <li><a href="#authentication">Authentication (AUTH)</a></li>
+                    <li><a href="#vision">Vision Management</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#detection-logs">Detection Logs</a></li>
+                    <li><a href="#error-responses">Error Responses</a></li>
+                    <li><a href="#examples">Examples</a></li>
+                </ul>
+
+                <h3>🔐 Auth Endpoints</h3>
+                <ul>
+                    <li><a href="#auth-register">Register</a></li>
+                    <li><a href="#auth-login">Login</a></li>
+                    <li><a href="#auth-logout">Logout</a></li>
+                    <li><a href="#auth-refresh">Refresh Token</a></li>
+                    <li><a href="#auth-me">Get Current User</a></li>
+                </ul>
+
+                <h3>👁️ Vision Endpoints</h3>
+                <ul>
+                    <li><a href="#vision-projects">Projects</a></li>
+                    <li><a href="#vision-cameras">Cameras</a></li>
+                    <li><a href="#vision-models">Models</a></li>
+                    <li><a href="#vision-devices">Devices</a></li>
+                    <li><a href="#vision-inference">Inference</a></li>
+                    <li><a href="#vision-media">Media Library</a></li>
+                </ul>
+
+                <h3>📊 Dashboard Endpoints</h3>
+                <ul>
+                    <li><a href="#dashboard-stats">Statistics</a></li>
+                    <li><a href="#dashboard-charts">Charts</a></li>
+                    <li><a href="#dashboard-ranking">Ranking</a></li>
+                    <li><a href="#dashboard-security">Security</a></li>
+                    <li><a href="#dashboard-notifications">Notifications</a></li>
+                    <li><a href="#dashboard-widget">Widget</a></li>
+                </ul>
+            </nav>
+
+            <main>
+                <!-- Table of Contents -->
+                <div class="toc">
+                    <h3>📋 Table of Contents</h3>
+                    <ol>
+                        <li><a href="#health-check">Health Check</a></li>
+                        <li><a href="#authentication">Authentication (AUTH)</a></li>
+                        <li><a href="#vision">Vision Management (VISION)</a></li>
+                        <li><a href="#dashboard">Dashboard (DASHBOARD)</a></li>
+                        <li><a href="#detection-logs">Detection Logs</a></li>
+                        <li><a href="#error-responses">Error Responses</a></li>
+                        <li><a href="#examples">Example Usage</a></li>
+                    </ol>
+                </div>
+
+                <!-- Health Check -->
+                <h2 id="health-check">🏥 Health Check</h2>
+
+                <h3 id="health-get">GET /health</h3>
+                <p>Check if the backend server is running.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> http://localhost:8000/health</strong>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>{
+  "status": "ok"
+}</pre>
+                </div>
+
+                <!-- Authentication -->
+                <h2 id="authentication">🔐 Authentication (AUTH)</h2>
+
+                <div class="note">
+                    <strong>📌 Note:</strong> Authentication uses JWT tokens. Include the access token in the Authorization header:
+                    <pre style="margin-top: 10px;">Authorization: Bearer &lt;access_token&gt;</pre>
+                </div>
+
+                <h3 id="auth-register">POST /api/v1/auth/register</h3>
+                <p>Register a new user account.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/auth/register</strong><br>
+                    Content-Type: application/json
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body:</h4>
+                    <pre>{
+  "username": "string",
+  "email": "user@example.com",
+  "password": "string"
+}</pre>
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-201">201 Created</span>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response:</h4>
+                    <pre>{
+  "id": "uuid",
+  "username": "string",
+  "email": "user@example.com",
+  "role": "user",
+  "is_active": true
+}</pre>
+                </div>
+
+                <div class="errors">
+                    <h5>⚠️ Errors:</h5>
+                    <ul>
+                        <li><code>400 Bad Request</code> - Username or email already registered</li>
+                    </ul>
+                </div>
+
+                <h3 id="auth-login">POST /api/v1/auth/login</h3>
+                <p>Login with username and password to get JWT tokens.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/auth/login</strong><br>
+                    Content-Type: application/json
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body:</h4>
+                    <pre>{
+  "username": "string",
+  "password": "string"
+}</pre>
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-200">200 OK</span>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response:</h4>
+                    <pre>{
+  "access_token": "jwt_token",
+  "refresh_token": "jwt_token",
+  "token_type": "bearer"
+}</pre>
+                </div>
+
+                <div class="errors">
+                    <h5>⚠️ Errors:</h5>
+                    <ul>
+                        <li><code>401 Unauthorized</code> - Invalid username or password</li>
+                        <li><code>400 Bad Request</code> - Inactive user</li>
+                    </ul>
+                </div>
+
+                <h3 id="auth-logout">POST /api/v1/auth/logout</h3>
+                <p>Logout and invalidate the current session.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/auth/logout</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-200">200 OK</span>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response:</h4>
+                    <pre>{
+  "message": "Successfully logged out"
+}</pre>
+                </div>
+
+                <div class="errors">
+                    <h5>⚠️ Errors:</h5>
+                    <ul>
+                        <li><code>401 Unauthorized</code> - Invalid token</li>
+                    </ul>
+                </div>
+
+                <h3 id="auth-refresh">POST /api/v1/auth/refresh</h3>
+                <p>Refresh the access token using a refresh token.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/auth/refresh</strong><br>
+                    Authorization: Bearer &lt;refresh_token&gt;
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-200">200 OK</span>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response:</h4>
+                    <pre>{
+  "access_token": "new_jwt_token",
+  "refresh_token": "jwt_token",
+  "token_type": "bearer"
+}</pre>
+                </div>
+
+                <div class="errors">
+                    <h5>⚠️ Errors:</h5>
+                    <ul>
+                        <li><code>401 Unauthorized</code> - Invalid refresh token or expired session</li>
+                    </ul>
+                </div>
+
+                <h3 id="auth-me">GET /api/v1/auth/me</h3>
+                <p>Get the current authenticated user's information.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/auth/me</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-200">200 OK</span>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response:</h4>
+                    <pre>{
+  "id": "uuid",
+  "username": "string",
+  "email": "user@example.com",
+  "role": "user",
+  "is_active": true
+}</pre>
+                </div>
+
+                <div class="errors">
+                    <h5>⚠️ Errors:</h5>
+                    <ul>
+                        <li><code>401 Unauthorized</code> - Invalid or revoked token</li>
+                        <li><code>404 Not Found</code> - User not found</li>
+                    </ul>
+                </div>
+
+                <!-- Vision Management -->
+                <h2 id="vision">👁️ Vision Management (VISION)</h2>
+
+                <h3 id="vision-projects">Projects</h3>
+
+                <h4>GET /api/v1/vision/projects</h4>
+                <p>Get all projects.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/projects</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>[
+  {
+    "id": "string",
+    "name": "string",
+    "description": "string",
+    "created_at": "ISO8601_timestamp",
+    "updated_at": "ISO8601_timestamp",
+    "status": "active",
+    "cameras": [],
+    "models": []
+  }
+]</pre>
+                </div>
+
+                <h4>GET /api/v1/vision/projects/{project_id}</h4>
+                <p>Get a specific project by ID.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/projects/{project_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-200">200 OK</span>
+                    <span class="status-badge status-404">404 Not Found</span>
+                </div>
+
+                <h3 id="vision-cameras">Cameras</h3>
+
+                <h4>GET /api/v1/vision/cameras</h4>
+                <p>Get all camera configurations.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/cameras</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>[
+  {
+    "id": "cam-xxxxxxxx",
+    "name": "string",
+    "protocol": "GigE|RTSP|HTTP|USB",
+    "connection_string": "string",
+    "status": "disconnected|connected|error",
+    "mode": "auto|manual",
+    "settings": {},
+    "created_at": "ISO8601_timestamp"
+  }
+]</pre>
+                </div>
+
+                <h4>POST /api/v1/vision/cameras</h4>
+                <p>Create a new camera configuration.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/vision/cameras</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;<br>
+                    Content-Type: application/x-www-form-urlencoded
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body (Form Data):</h4>
+                    <pre>name=Camera%20Name
+protocol=RTSP
+connection_string=rtsp://192.168.1.100:554/stream
+mode=auto</pre>
+                </div>
+
+                <div class="response-codes">
+                    <span class="status-badge status-201">201 Created</span>
+                    <span class="status-badge status-400">400 Bad Request</span>
+                </div>
+
+                <h4>PUT /api/v1/vision/cameras/{camera_id}</h4>
+                <p>Update a camera configuration.</p>
+
+                <div class="endpoint put">
+                    <strong><span class="method put">PUT</span> /api/v1/vision/cameras/{camera_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;<br>
+                    Content-Type: application/x-www-form-urlencoded
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body (Form Data - all optional):</h4>
+                    <pre>name=Updated Name
+protocol=RTSP
+connection_string=rtsp://new-ip:554/stream
+mode=manual</pre>
+                </div>
+
+                <h4>DELETE /api/v1/vision/cameras/{camera_id}</h4>
+                <p>Delete a camera configuration.</p>
+
+                <div class="endpoint delete">
+                    <strong><span class="method delete">DELETE</span> /api/v1/vision/cameras/{camera_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h3 id="vision-models">Models</h3>
+
+                <h4>GET /api/v1/vision/models/types</h4>
+                <p>Get all available model types.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/models/types</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>GET /api/v1/vision/models</h4>
+                <p>Get all models, optionally filtered by type.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/models?model_type=yolov8</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>POST /api/v1/vision/models/upload</h4>
+                <p>Upload a new model file.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/vision/models/upload</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;<br>
+                    Content-Type: multipart/form-data
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body (Form Data):</h4>
+                    <pre>file=&lt;binary_file&gt;
+name=My Model
+model_type=yolov8
+description=Optional description
+confidence=0.5</pre>
+                </div>
+
+                <h4>GET /api/v1/vision/models/{model_id}</h4>
+                <p>Get a specific model by ID.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/models/{model_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>GET /api/v1/vision/models/{model_id}/info</h4>
+                <p>Get detailed model information including inference capabilities.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/models/{model_id}/info</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>POST /api/v1/vision/models/{model_id}/test</h4>
+                <p>Test a model with an uploaded image.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/vision/models/{model_id}/test</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;<br>
+                    Content-Type: multipart/form-data
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body (Form Data):</h4>
+                    <pre>image=&lt;binary_image_file&gt;
+confidence=0.5
+iou_threshold=0.45</pre>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>{
+  "model_id": "model-xxxxxxxx",
+  "model_name": "string",
+  "model_type": "yolov8",
+  "detections": [
+    {
+      "class": "class_name",
+      "confidence": 0.95,
+      "bbox": [x1, y1, x2, y2]
+    }
+  ],
+  "inference_time_ms": 45.2,
+  "image_size": [640, 480],
+  "timestamp": "ISO8601_timestamp"
+}</pre>
+                </div>
+
+                <h4>DELETE /api/v1/vision/models/{model_id}</h4>
+                <p>Delete a model and its file.</p>
+
+                <div class="endpoint delete">
+                    <strong><span class="method delete">DELETE</span> /api/v1/vision/models/{model_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h3 id="vision-devices">Inference Devices</h3>
+
+                <h4>GET /api/v1/vision/devices</h4>
+                <p>Get available inference devices (CPU/GPU).</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/devices</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>[
+  {
+    "id": "cpu",
+    "name": "CPU",
+    "type": "cpu"
+  },
+  {
+    "id": "cuda:0",
+    "name": "NVIDIA GeForce RTX 3080",
+    "type": "gpu"
+  }
+]</pre>
+                </div>
+
+                <h3 id="vision-inference">Live Inference Streams</h3>
+
+                <h4>GET /api/v1/vision/inference/live/stream/{camera_id}/{model_id}</h4>
+                <p>Stream live inference results as MJPEG.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/inference/live/stream/{camera_id}/{model_id}</strong><br>
+                    <span style="font-size: 0.85em;">?confidence=0.5&iou_threshold=0.45&fps=10&device=gpu</span><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="params-section">
+                    <h4>Query Parameters:</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>confidence</code> (optional, default: 0.5) - Confidence threshold (0-1)</li>
+                        <li><code>iou_threshold</code> (optional, default: 0.45) - IoU threshold for NMS</li>
+                        <li><code>fps</code> (optional, default: 10) - Target frames per second</li>
+                        <li><code>device</code> (optional, default: gpu) - Device to use (gpu or cpu)</li>
+                    </ul>
+                </div>
+
+                <h4>GET /api/v1/vision/inference/live/stream/{camera_id}/{model_id}/results</h4>
+                <p>Get the latest inference results for a specific stream.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/inference/live/stream/{camera_id}/{model_id}/results</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>{
+  "status": "active|stopped|inactive",
+  "camera_id": "cam-xxxxxxxx",
+  "model_id": "model-xxxxxxxx",
+  "data": {
+    "detections": [...],
+    "inference_time_ms": 45.2,
+    "fps": 25.5,
+    "timestamp": "ISO8601_timestamp"
+  }
+}</pre>
+                </div>
+
+                <h4>POST /api/v1/vision/inference/live/stop/{camera_id}/{model_id}</h4>
+                <p>Stop an active inference stream.</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/vision/inference/live/stop/{camera_id}/{model_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>POST /api/v1/vision/inference/live/config/{camera_id}/{model_id}</h4>
+                <p>Update stream configuration (class filters, colors).</p>
+
+                <div class="endpoint post">
+                    <strong><span class="method post">POST</span> /api/v1/vision/inference/live/config/{camera_id}/{model_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;<br>
+                    Content-Type: application/json
+                </div>
+
+                <div class="request-section">
+                    <h4>Request Body:</h4>
+                    <pre>{
+  "class_name": {
+    "visible": true,
+    "color": "#FF0000"
+  },
+  "another_class": {
+    "visible": false,
+    "color": "#00FF00"
+  }
+}</pre>
+                </div>
+
+                <h4>GET /api/v1/vision/inference/live/detections</h4>
+                <p>Get the latest live inference detection results as JSON.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/inference/live/detections</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h3 id="vision-media">Media Library</h3>
+
+                <h4>GET /api/v1/vision/media</h4>
+                <p>List all test media records.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/vision/media</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>DELETE /api/v1/vision/media/{record_id}</h4>
+                <p>Delete a test media record and its files.</p>
+
+                <div class="endpoint delete">
+                    <strong><span class="method delete">DELETE</span> /api/v1/vision/media/{record_id}</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <!-- Dashboard -->
+                <h2 id="dashboard">📊 Dashboard (DASHBOARD)</h2>
+
+                <h3 id="dashboard-stats">GET /api/v1/dashboard/stats</h3>
+                <p>Get dashboard statistics.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/stats</strong>
+                </div>
+
+                <div class="response-section">
+                    <h4>Response (200 OK):</h4>
+                    <pre>[
+  {
+    "label": "TOTAL INSPECTIONS",
+    "value": "1234",
+    "description": "FRAMES PROCESSED",
+    "intent": "neutral",
+    "icon": "gear",
+    "direction": "up"
+  },
+  {
+    "label": "DEFECTS FOUND",
+    "value": "45",
+    "description": "ISSUES DETECTED",
+    "intent": "negative",
+    "icon": "boom",
+    "direction": "up"
+  }
+]</pre>
+                </div>
+
+                <h3 id="dashboard-charts">GET /api/v1/dashboard/charts</h3>
+                <p>Get chart data for analytics.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/charts</strong>
+                </div>
+
+                <h3 id="dashboard-ranking">GET /api/v1/dashboard/ranking</h3>
+                <p>Get user ranking data.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/ranking</strong>
+                </div>
+
+                <h3 id="dashboard-security">GET /api/v1/dashboard/security</h3>
+                <p>Get security status information.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/security</strong>
+                </div>
+
+                <h3 id="dashboard-notifications">GET /api/v1/dashboard/notifications</h3>
+                <p>Get all notifications.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/notifications</strong>
+                </div>
+
+                <h3 id="dashboard-widget">GET /api/v1/dashboard/widget</h3>
+                <p>Get widget data (location, weather, etc.).</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/dashboard/widget</strong>
+                </div>
+
+                <!-- Detection Logs -->
+                <h2 id="detection-logs">📝 Detection Logs</h2>
+
+                <h4>GET /api/v1/detection-logs</h4>
+                <p>Get detection logs with filtering and pagination.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/detection-logs</strong><br>
+                    <span style="font-size: 0.85em;">?skip=0&limit=50&camera_id=cam-xxx&has_detections=true</span><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <div class="params-section">
+                    <h4>Query Parameters:</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><code>skip</code> (optional, default: 0) - Number of records to skip</li>
+                        <li><code>limit</code> (optional, default: 50) - Maximum number of records to return</li>
+                        <li><code>camera_id</code> (optional) - Filter by camera ID</li>
+                        <li><code>model_id</code> (optional) - Filter by model ID</li>
+                        <li><code>has_detections</code> (optional) - Filter by detection presence</li>
+                        <li><code>start_date</code> (optional) - Filter by start date (ISO8601)</li>
+                        <li><code>end_date</code> (optional) - Filter by end date (ISO8601)</li>
+                    </ul>
+                </div>
+
+                <h4>GET /api/v1/detection-logs/stats</h4>
+                <p>Get aggregated detection statistics.</p>
+
+                <div class="endpoint get">
+                    <strong><span class="method get">GET</span> /api/v1/detection-logs/stats?days=7</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <h4>DELETE /api/v1/detection-logs</h4>
+                <p>Clear detection logs.</p>
+
+                <div class="endpoint delete">
+                    <strong><span class="method delete">DELETE</span> /api/v1/detection-logs?older_than_days=30</strong><br>
+                    Authorization: Bearer &lt;access_token&gt;
+                </div>
+
+                <!-- Error Responses -->
+                <h2 id="error-responses">⚠️ Error Responses</h2>
+
+                <p>All API endpoints use standard HTTP status codes and return error details in JSON format:</p>
+
+                <div class="response-section">
+                    <h4>Error Response Format:</h4>
+                    <pre>{
+  "detail": "Error message describing what went wrong"
+}</pre>
+                </div>
+
+                <div class="params-section">
+                    <h4>Common Status Codes:</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><span class="status-badge status-200">200 OK</span> - Request succeeded</li>
+                        <li><span class="status-badge status-201">201 Created</span> - Resource created successfully</li>
+                        <li><span class="status-badge status-400">400 Bad Request</span> - Invalid request data</li>
+                        <li><span class="status-badge status-401">401 Unauthorized</span> - Missing or invalid authentication</li>
+                        <li><span class="status-badge status-404">404 Not Found</span> - Resource not found</li>
+                        <li><span class="status-badge status-500">500 Internal Server Error</span> - Server error</li>
+                    </ul>
+                </div>
+
+                <!-- Examples -->
+                <h2 id="examples">💡 Example Usage</h2>
+
+                <h3>JavaScript / Fetch</h3>
+                <pre>// Login
+const loginResponse = await fetch('http://localhost:8000/api/v1/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'user',
+    password: 'password'
+  })
+});
+
+const { access_token } = await loginResponse.json();
+
+// Get cameras
+const camerasResponse = await fetch('http://localhost:8000/api/v1/vision/cameras', {
+  headers: { 'Authorization': `Bearer ${access_token}` }
+});
+
+const cameras = await camerasResponse.json();</pre>
+
+                <h3>Python (requests)</h3>
+                <pre>import requests
+
+# Login
+response = requests.post('http://localhost:8000/api/v1/auth/login', json={
+    'username': 'user',
+    'password': 'password'
+})
+
+access_token = response.json()['access_token']
+
+# Get cameras
+response = requests.get('http://localhost:8000/api/v1/vision/cameras', 
+    headers={'Authorization': f'Bearer {access_token}'})
+
+cameras = response.json()</pre>
+
+                <h3>cURL</h3>
+                <pre># Login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"user","password":"password"}'
+
+# Get cameras (replace TOKEN with your access_token)
+curl -X GET http://localhost:8000/api/v1/vision/cameras \
+  -H "Authorization: Bearer TOKEN"</pre>
+            </main>
+        </div>
+
+        <footer>
+            <p>🚀 <strong>Aatron Backend API Reference</strong> | Last Updated: February 28, 2026 | API Version: v1</p>
+            <p>Questions? Check the <a href="#examples">examples section</a> or review the <a href="#error-responses">error responses</a> documentation.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple search functionality
+        const searchInput = document.getElementById('apiSearch');
+        const navLinks = document.querySelectorAll('nav a');
+
+        searchInput?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+
+            navLinks.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    link.style.display = 'block';
+                } else {
+                    link.style.display = 'none';
+                }
+            });
+        });
+
+        // Smooth scroll behavior
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Copy code to clipboard
+        document.querySelectorAll('pre').forEach(pre => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.textContent = 'Copy';
+            button.addEventListener('click', () => {
+                const text = pre.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    button.textContent = 'Copied!';
+                    setTimeout(() => {
+                        button.textContent = 'Copy';
+                    }, 2000);
+                });
+            });
+            pre.style.position = 'relative';
+            pre.appendChild(button);
+        });
+    </script>
+</body>
+</html>

@@ -9,9 +9,10 @@ import Image from "next/image";
 
 interface WidgetProps {
   widgetData: WidgetData;
+  backgroundContent?: React.ReactNode;
 }
 
-export default function Widget({ widgetData }: WidgetProps) {
+export default function Widget({ widgetData, backgroundContent }: WidgetProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -68,13 +69,17 @@ export default function Widget({ widgetData }: WidgetProps) {
         </div>
 
         <div className="absolute inset-0 -z-[1]">
-          <Image
-            src="/assets/pc_blueprint.gif"
-            alt="logo"
-            width={250}
-            height={250}
-            className="size-full object-contain"
-          />
+          {backgroundContent ? (
+            backgroundContent
+          ) : (
+            <Image
+              src="/assets/pc_blueprint.gif"
+              alt="logo"
+              width={250}
+              height={250}
+              className="size-full object-contain"
+            />
+          )}
         </div>
       </CardContent>
     </Card>

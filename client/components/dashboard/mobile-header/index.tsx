@@ -5,15 +5,15 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import CameraIcon from "@/components/icons/camera";
 import MobileNotifications from "@/components/dashboard/notifications/mobile-notifications";
-import type { MockData } from "@/types/dashboard";
+import type { Notification } from "@/types/dashboard";
 import BellIcon from "@/components/icons/bell";
 
 interface MobileHeaderProps {
-  mockData: MockData;
+  notifications: Notification[];
 }
 
-export function MobileHeader({ mockData }: MobileHeaderProps) {
-  const unreadCount = mockData.notifications.filter((n) => !n.read).length;
+export function MobileHeader({ notifications }: MobileHeaderProps) {
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div className="lg:hidden h-header-mobile sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -51,7 +51,7 @@ export function MobileHeader({ mockData }: MobileHeaderProps) {
             className="w-[80%] max-w-md p-0"
           >
             <MobileNotifications
-              initialNotifications={mockData.notifications}
+              initialNotifications={notifications}
             />
           </SheetContent>
         </Sheet>

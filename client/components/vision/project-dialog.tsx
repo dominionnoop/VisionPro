@@ -17,7 +17,8 @@ import { Input } from "@/components/ui/input";
 interface ProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { name: string; description: string }) => void;
+  onSubmit: (data: { name: string; description: string }) => void | Promise<void>;
+  isSubmitting?: boolean;
   defaultValues?: { name: string; description: string };
   mode: "create" | "edit";
 }
@@ -26,6 +27,7 @@ export function ProjectDialog({
   open,
   onOpenChange,
   onSubmit,
+  isSubmitting = false,
   defaultValues,
   mode,
 }: ProjectDialogProps) {
@@ -39,10 +41,10 @@ export function ProjectDialog({
     }
   }, [open, defaultValues]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    onSubmit({ name: name.trim(), description: description.trim() });
+    if (!name.trim() || isSubmitting) return;
+    await onSubmit({ name: name.trim(), description: description.trim() });
   };
 
   return (
@@ -86,12 +88,17 @@ export function ProjectDialog({
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit">
-              {mode === "create" ? "Create" : "Save Changes"}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create"
+                  : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

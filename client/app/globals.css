@@ -1,109 +1,120 @@
-/* @import "tw-animate-css"; */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Rebels";
-  src: url("/fonts/Rebels-Fett.woff2") format("woff2");
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-:root {
-  --radius: 0.625rem;
-  --background: 48 100% 97%;
-  --foreground: 30 25% 15%;
-  --card: 48 100% 92%;
-  --card-foreground: 30 25% 15%;
-  --popover: 48 100% 95%;
-  --popover-foreground: 30 25% 15%;
-  --primary: 48 100% 50%;
-  --primary-foreground: 30 25% 15%;
-  --secondary: 48 90% 70%;
-  --secondary-foreground: 30 25% 15%;
-  --muted: 48 80% 90%;
-  --muted-foreground: 30 15% 40%;
-  --accent: 48 100% 60%;
-  --accent-foreground: 30 25% 15%;
-  --border: 48 70% 80%;
-  --pop: 48 80% 88%;
-  --input: 48 70% 85%;
-  --ring: 48 100% 50%;
-
-  --success: 142 76% 36%;
-  --destructive: 0 84% 60%;
-  --warning: 45 93% 47%;
-
-  --chart-1: 48 100% 50%;
-  --chart-2: 45 95% 55%;
-  --chart-3: 50 100% 45%;
-  --chart-4: 43 100% 52%;
-  --chart-5: 48 90% 58%;
-  --sidebar: 48 100% 85%;
-  --sidebar-foreground: 30 25% 15%;
-  --sidebar-primary: 48 100% 50%;
-  --sidebar-primary-foreground: 30 25% 15%;
-  --sidebar-accent: 48 90% 75%;
-  --sidebar-accent-foreground: 30 25% 15%;
-  --sidebar-border: 48 70% 75%;
-  --sidebar-ring: 48 100% 50%;
-
-  --gap: 1rem;
-  --sides: 1rem;
-  --header-mobile: 3.8rem;
-  --header-height: 4.5rem;
-}
-
-.dark {
-  --background: 30 15% 12%;
-  --foreground: 48 80% 95%;
-  --card: 30 15% 15%;
-  --card-foreground: 48 80% 95%;
-  --popover: 30 15% 10%;
-  --popover-foreground: 48 80% 95%;
-  --primary: 48 100% 60%;
-  --primary-foreground: 30 15% 12%;
-  --secondary: 48 60% 30%;
-  --secondary-foreground: 48 80% 95%;
-  --muted: 30 10% 20%;
-  --muted-foreground: 48 40% 70%;
-  --accent: 48 100% 60% / 15%;
-  --accent-foreground: 48 80% 95%;
-  --border: 48 100% 60% / 20%;
-  --pop: 48 100% 60% / 10%;
-  --input: 48 100% 60% / 25%;
-  --ring: 48 100% 60%;
-
-  --success: 142 70% 50%;
-  --warning: 45 90% 55%;
-  --destructive: 0 70% 50%;
-
-  --chart-1: 48 100% 60%;
-  --chart-2: 45 95% 65%;
-  --chart-3: 50 100% 55%;
-  --chart-4: 43 90% 58%;
-  --chart-5: 48 85% 62%;
-
-  --sidebar: 30 15% 8%;
-  --sidebar-foreground: 48 80% 95%;
-  --sidebar-primary: 48 100% 60%;
-  --sidebar-primary-foreground: 30 15% 12%;
-  --sidebar-accent: 48 100% 60% / 12%;
-  --sidebar-accent-hover: 48 100% 60% / 20%;
-  --sidebar-accent-foreground: 48 80% 95%;
-  --sidebar-border: 48 100% 60% / 18%;
-  --sidebar-ring: 48 100% 60%;
-}
-
 @layer base {
+  :root {
+    --radius: 0.625rem;
+    --background: 220 33% 98%;
+    --foreground: 224 30% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 30% 14%;
+    --primary: 38 97% 56%;
+    --primary-foreground: 212 40% 12%;
+    --secondary: 220 24% 95%;
+    --secondary-foreground: 223 28% 18%;
+    --muted: 220 20% 96%;
+    --muted-foreground: 220 12% 42%;
+    --accent: 39 95% 94%;
+    --accent-foreground: 224 34% 16%;
+    --border: 220 16% 87%;
+    --pop: 220 20% 93%;
+    --input: 220 16% 87%;
+    --ring: 38 97% 56%;
+
+    --success: 142 70% 36%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --warning: 45 93% 47%;
+
+    --chart-1: 39 96% 72%;
+    --chart-2: 38 97% 64%;
+    --chart-3: 38 97% 56%;
+    --chart-4: 34 92% 52%;
+    --chart-5: 45 88% 48%;
+    --sidebar: 220 35% 99%;
+    --sidebar-foreground: 224 30% 14%;
+    --sidebar-primary: 38 97% 56%;
+    --sidebar-primary-foreground: 212 40% 12%;
+    --sidebar-accent: 220 24% 95%;
+    --sidebar-accent-hover: 220 22% 92%;
+    --sidebar-accent-foreground: 224 30% 14%;
+    --sidebar-border: 220 16% 87%;
+    --sidebar-ring: 34 92% 52%;
+
+    --brand-gradient-start: 39 96% 72%;
+    --brand-gradient-mid: 38 97% 64%;
+    --brand-gradient-end: 38 97% 56%;
+    --brand-gradient: linear-gradient(
+      90deg,
+      hsl(var(--brand-gradient-start)) 0%,
+      hsl(var(--brand-gradient-mid)) 56%,
+      hsl(var(--brand-gradient-end)) 100%
+    );
+
+    --gap: 1rem;
+    --sides: 1rem;
+    --header-mobile: 3.8rem;
+    --header-height: 4rem;
+  }
+
+  .dark {
+    --background: 224 34% 10%;
+    --foreground: 210 22% 95%;
+    --card: 224 30% 13%;
+    --card-foreground: 210 22% 95%;
+    --popover: 224 28% 14%;
+    --popover-foreground: 210 22% 95%;
+    --primary: 38 96% 58%;
+    --primary-foreground: 220 36% 10%;
+    --secondary: 223 20% 18%;
+    --secondary-foreground: 210 22% 95%;
+    --muted: 223 18% 17%;
+    --muted-foreground: 220 12% 72%;
+    --accent: 38 96% 58% / 20%;
+    --accent-foreground: 220 36% 10%;
+    --border: 220 14% 30%;
+    --pop: 38 96% 58% / 22%;
+    --input: 220 14% 30%;
+    --ring: 39 96% 66%;
+
+    --success: 142 70% 36%;
+    --warning: 45 93% 47%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 98%;
+
+    --chart-1: 39 96% 66%;
+    --chart-2: 38 97% 58%;
+    --chart-3: 34 92% 52%;
+    --chart-4: 30 90% 46%;
+    --chart-5: 45 88% 60%;
+
+    --sidebar: 224 34% 12%;
+    --sidebar-foreground: 210 22% 95%;
+    --sidebar-primary: 38 97% 58%;
+    --sidebar-primary-foreground: 220 36% 10%;
+    --sidebar-accent: 38 97% 58% / 16%;
+    --sidebar-accent-hover: 34 92% 52% / 26%;
+    --sidebar-accent-foreground: 210 22% 95%;
+    --sidebar-border: 220 14% 30%;
+    --sidebar-ring: 39 96% 66%;
+
+    --brand-gradient-start: 39 96% 66%;
+    --brand-gradient-mid: 38 97% 58%;
+    --brand-gradient-end: 34 92% 52%;
+  }
+
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-mono;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 0% 0%, hsl(var(--primary) / 0.08), transparent 35%),
+      radial-gradient(circle at 100% 0%, hsl(var(--ring) / 0.06), transparent 32%);
+    background-attachment: fixed;
   }
 }
 
@@ -183,4 +194,13 @@
 .group:hover .animate-marquee-up,
 .group:hover .animate-marquee-down {
   animation-play-state: paused;
+}
+
+/* Brand Sidebar Gradient */
+@layer utilities {
+  .bg-sidebar-primary {
+    background-image: var(--brand-gradient) !important;
+    background-color: transparent !important;
+    color: var(--sidebar-primary-foreground) !important;
+  }
 }

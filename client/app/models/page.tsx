@@ -1,9 +1,13 @@
 import DashboardPageLayout from "@/components/dashboard/layout";
 import CubeIcon from "@/components/icons/cube";
 import { ModelList } from "@/components/vision/model-list";
-import { mockCameras } from "@/data/vision-mock";
+import { fetchModels, fetchCameras } from "@/data/vision-api";
 
-export default function ModelsPage() {
+export default async function ModelsPage() {
+  const [models, cameras] = await Promise.all([fetchModels(), fetchCameras()]);
+  const m = models || [];
+  const c = cameras || [];
+
   return (
     <DashboardPageLayout
       header={{
@@ -12,7 +16,7 @@ export default function ModelsPage() {
         icon: CubeIcon,
       }}
     >
-      <ModelList cameras={mockCameras} />
+      <ModelList models={m} cameras={c} />
     </DashboardPageLayout>
   );
 }

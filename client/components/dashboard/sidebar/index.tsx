@@ -1,26 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import FolderIcon from "@/components/icons/folder";
 import CameraIcon from "@/components/icons/camera";
 import CubeIcon from "@/components/icons/cube";
 import MonitorIcon from "@/components/icons/monitor";
 import ZapIcon from "@/components/icons/zap";
-import GearIcon from "@/components/icons/gear";
 import BookIcon from "@/components/icons/book";
-import CuteRobotIcon from "@/components/icons/cute-robot";
 
 import { useProjectStore } from "@/lib/store";
 
 // Project specific items
 const projectNavItems = [
   {
-    title: "Cameras",
+    title: "Vision Sources",
     url: "/cameras",
-    icon: CameraIcon,
+    icon: MonitorIcon,
   },
   {
     title: "Models",
@@ -37,15 +35,11 @@ const projectNavItems = [
     url: "/actions",
     icon: ZapIcon,
   },
-  {
-    title: "Training AI",
-    url: "/training",
-    icon: CuteRobotIcon,
-  },
 ];
 
 export function DashboardSidebar({ className }: { className?: string }) {
   const pathname = usePathname();
+  const safePathname = pathname ?? "";
   const { selectedProject, setSelectedProject } = useProjectStore();
 
   return (
@@ -62,7 +56,7 @@ export function DashboardSidebar({ className }: { className?: string }) {
           onClick={() => setSelectedProject(null)} // Reset selection when going back to list
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors",
-            pathname === "/"
+            safePathname === "/"
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
           )}
@@ -79,7 +73,9 @@ export function DashboardSidebar({ className }: { className?: string }) {
             </div>
 
             {projectNavItems.map((item) => {
-              const isActive = pathname === item.url || pathname.startsWith(item.url);
+              const isActive =
+                safePathname === item.url ||
+                (item.url !== "/" && safePathname.startsWith(item.url));
 
               return (
                 <Link
@@ -104,23 +100,10 @@ export function DashboardSidebar({ className }: { className?: string }) {
         {!selectedProject && (
           <>
             <Link
-              href="/training"
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors",
-                pathname === "/training"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              )}
-            >
-              <CuteRobotIcon className="size-5 shrink-0" />
-              <span className="text-sm font-medium">Training AI</span>
-            </Link>
-
-            <Link
               href="/docs"
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors mt-auto",
-                pathname === "/docs"
+                safePathname === "/docs"
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
               )}

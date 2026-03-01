@@ -1,18 +1,20 @@
 import DashboardPageLayout from "@/components/dashboard/layout";
-import CameraIcon from "@/components/icons/camera";
+import MonitorIcon from "@/components/icons/monitor";
 import { CameraList } from "@/components/vision/camera-list";
-import { mockCameras } from "@/data/vision-mock";
+import { fetchCameras } from "@/data/vision-api";
 
-export default function CamerasPage() {
+export default async function CamerasPage() {
+  const cameras = (await fetchCameras()) || [];
+
   return (
     <DashboardPageLayout
       header={{
-        title: "Cameras",
-        description: "Configure and manage camera connections",
-        icon: CameraIcon,
+        title: "Vision Sources",
+        description: "Configure and manage vision source connections",
+        icon: MonitorIcon,
       }}
     >
-      <CameraList cameras={mockCameras} />
+      <CameraList cameras={cameras} />
     </DashboardPageLayout>
   );
 }

@@ -1,34 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import type { Project } from "@/types/api";
+import type { Project } from "@/types/vision";
 import PlusIcon from "@/components/icons/plus";
 import FolderIcon from "@/components/icons/folder";
 import { ProjectDialog } from "./project-dialog";
+import { createProject, fetchProjects, deleteProject } from "@/data/vision-api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import { useProjectStore } from "@/lib/store";
-import api from "@/lib/api";
 
 interface ProjectListProps {
   projects: Project[];
-  onUpdate?: (projects: Project[]) => void;
 }
 
-export function ProjectList({ projects: initialProjects, onUpdate }: ProjectListProps) {
+export function ProjectList({ projects: initialProjects }: ProjectListProps) {
   const [projects, setProjects] = useState(initialProjects);
   const { setSelectedProject } = useProjectStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const updateProjects = (newProjects: Project[]) => {
-    setProjects(newProjects);
-    onUpdate?.(newProjects);
-  };
+  useEffect(() => {
+    setProjects(initialProjects);
+  }, [initialProjects]);
 
   const filteredProjects = projects.filter(
     (project) =>
@@ -37,55 +46,49 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
   );
 
   const handleCreateProject = async (data: { name: string; description: string }) => {
+    setIsSubmitting(true);
     try {
-      setLoading(true);
-      const newProject = await api.projects.create({
-        name: data.name,
-        description: data.description,
-        status: "active",
-      });
-      updateProjects([newProject, ...projects]);
+      const created = await createProject(data);
+      if (!created) return;
+
+      const latest = await fetchProjects();
+      if (latest) {
+        setProjects(latest);
+      } else {
+        setProjects([created, ...projects]);
+      }
+
       setDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to create project:", error);
-      alert("Failed to create project. Please try again.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleEditProject = async (data: { name: string; description: string }) => {
+  const handleEditProject = (data: { name: string; description: string }) => {
     if (!editingProject) return;
-    try {
-      setLoading(true);
-      const updatedProject = await api.projects.update(editingProject.id, data);
-      updateProjects(
-        projects.map((p) => (p.id === editingProject.id ? updatedProject : p))
-      );
-      setEditingProject(null);
-      setDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to update project:", error);
-      alert("Failed to update project. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    setProjects(
+      projects.map((p) =>
+        p.id === editingProject.id
+          ? { ...p, ...data, updatedAt: new Date().toISOString() }
+          : p
+      )
+    );
+    setEditingProject(null);
+    setDialogOpen(false);
   };
 
   const handleDeleteProject = async (projectId: string) => {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+    setIsDeleting(true);
     try {
-      setLoading(true);
-      await api.projects.delete(projectId);
-      updateProjects(projects.filter((p) => p.id !== projectId));
-    } catch (error) {
-      console.error("Failed to delete project:", error);
-      alert("Failed to delete project. Please try again.");
+      const success = await deleteProject(projectId);
+      if (success) {
+        setProjects(projects.filter((p) => p.id !== projectId));
+      }
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
+      setProjectToDelete(null);
     }
   };
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("th-TH", {
@@ -129,7 +132,6 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
                   setDialogOpen(true);
                 }}
                 className="shrink-0"
-                disabled={loading}
               >
                 <PlusIcon className="size-4 mr-2" />
                 New Project
@@ -169,16 +171,15 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
                       {project.description}
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                      Updated: {formatDate(project.updated_at || project.created_at)}
+                      Updated: {formatDate(project.updatedAt)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={loading}
                       onClick={(e) => {
-                        e.stopPropagation();
+                        e.stopPropagation(); // Prevent selection when clicking edit
                         setEditingProject(project);
                         setDialogOpen(true);
                       }}
@@ -189,10 +190,9 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
                       variant="outline"
                       size="sm"
                       className="text-destructive hover:text-destructive bg-transparent"
-                      disabled={loading}
                       onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProject(project.id);
+                        e.stopPropagation(); // Prevent selection when clicking delete
+                        setProjectToDelete(project.id);
                       }}
                     >
                       Delete
@@ -209,6 +209,7 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={editingProject ? handleEditProject : handleCreateProject}
+        isSubmitting={isSubmitting}
         defaultValues={
           editingProject
             ? { name: editingProject.name, description: editingProject.description }
@@ -216,6 +217,33 @@ export function ProjectList({ projects: initialProjects, onUpdate }: ProjectList
         }
         mode={editingProject ? "edit" : "create"}
       />
+
+      <Dialog open={!!projectToDelete} onOpenChange={(open) => !open && !isDeleting && setProjectToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this project? This action cannot be undone. All associated data will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProjectToDelete(null)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={() => {
+                if (projectToDelete) {
+                  handleDeleteProject(projectToDelete);
+                }
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

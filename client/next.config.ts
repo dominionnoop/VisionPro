@@ -1,9 +1,9 @@
 import type { NextConfig } from "next"
-import path from "path"
 
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: isDev,
   },
@@ -12,40 +12,32 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizeCss: !isDev,
-    workerThreads: false,
   },
-  output: 'standalone',
   async rewrites() {
-    // Detect Docker environment via WATCHPACK_POLLING (set in local.yml)
-    const apiUrl = process.env.WATCHPACK_POLLING ? 'http://backend:8000' : 'http://localhost:8000';
-    console.log(`🔧 Proxying API requests to: ${apiUrl}`);
-
     return [
       {
         source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
-      },
-      {
-        source: '/vision/:path*',
-        destination: `${apiUrl}/vision/:path*`,
+        destination: process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/api/:path*` : 'http://backend:8000/api/:path*'
       },
       {
         source: '/media/:path*',
-        destination: `${apiUrl}/media/:path*`,
+        destination: process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/media/:path*` : 'http://backend:8000/media/:path*'
       },
+      {
+        source: '/health',
+        destination: process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/health` : 'http://backend:8000/health'
+      }
     ]
   },
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.optimization = {
-        ...config.optimization,
-        removeAvailableModules: false,
-        removeEmptyChunks: false,
-        splitChunks: false,
+  webpack: (config) => {
+    if (isDev) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
       }
     }
     return config
-  },
+  }
 }
 
 export default nextConfig

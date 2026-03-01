@@ -28,10 +28,10 @@ export default function NotificationItem({
       return `${hours}h ago`;
     } else {
       // Use consistent date format to avoid hydration mismatch
-      return date.toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "numeric",
       });
     }
   };
@@ -85,8 +85,8 @@ export default function NotificationItem({
         "group p-3 rounded-lg border transition-all duration-200 hover:shadow-sm",
         !notification.read && "cursor-pointer",
         notification.read
-          ? "bg-background/50 border-border/30"
-          : "bg-background border-border shadow-sm"
+          ? "bg-sidebar/40 border-sidebar-border/30"
+          : "bg-sidebar border-sidebar-border shadow-sm",
       )}
       onClick={handleNotificationClick}
     >
@@ -94,7 +94,7 @@ export default function NotificationItem({
         <div
           className={cn(
             "w-2 h-2 rounded-full mt-2 flex-shrink-0",
-            getTypeColor(notification.type)
+            getTypeColor(notification.type),
           )}
         />
 
@@ -106,7 +106,7 @@ export default function NotificationItem({
                   <h4
                     className={cn(
                       "text-sm font-medium truncate",
-                      !notification.read && "font-semibold"
+                      !notification.read && "font-semibold",
                     )}
                   >
                     {notification.title}

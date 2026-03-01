@@ -12,7 +12,7 @@ from pathlib import Path
 from app.core.config import settings
 
 class StreamContext:
-    def __init__(self, camera_id: str, model_id: str, model_path: str, connection_string: str, confidence: float, iou: float, fps: int):
+    def __init__(self, camera_id: str, model_id: str, model_path: str, connection_string: str, confidence: float, iou: float, fps: int, device: str = "auto", **kwargs):
         self.camera_id = camera_id
         self.model_id = model_id
         self.model_path = model_path
@@ -21,18 +21,34 @@ class StreamContext:
         self.iou = iou
         self.iou = iou
         self.fps = fps
+        self.device = device
         
         # Dynamic Configuration (Class filters & colors)
         # Format: { 'class_name': { 'visible': True, 'color': '#00FF00' } }
         self.class_config = {}
+        model_classes = kwargs.get('model_classes') or []
+        for cls in model_classes:
+            self.class_config[cls.get('name')] = {
+                'visible': True,
+                'color': cls.get('color', '#00ff00'),
+                'isDefect': False
+            }
+            
         self.config_lock = threading.Lock()
         
         # State
         self.latest_frame = None # JPEG bytes (Annotated)
         self.latest_detections = []
+        self.latest_log_events = []
         self.last_update = None
         self.is_running = False
         self.stop_event = threading.Event()
+        
+        # Debounce/Tracking State
+        self.tracker_objects = {} # dict of id -> { 'class_id': c, 'bbox': [], 'frames_present': int, 'frames_missing': int, 'logged': bool }
+        self.tracker_id_counter = 0
+        self.debounce_frames_enter = 3  # Must be seen for 3 frames to trigger "entered"
+        self.debounce_frames_exit = 15  # Must be missing for 15 frames to be "exited" and forgotten
         
         # Reader State
         self.raw_frame = None # Latest raw frame from camera
@@ -43,6 +59,12 @@ class StreamContext:
         # Profiling
         self.fps_tracker = 0
         self.inference_ms = 0
+
+        # Persistent Stats for this stream
+        self.total_inspections = 0
+        self.pass_count = 0
+        self.fail_count = 0
+        self.class_counts = {} # Record[str, int]
 
     def start(self):
         if self.is_running:
@@ -75,14 +97,26 @@ class StreamContext:
         """Continuously reads frames to prevent buffer buildup"""
         print(f"📷 [Stream {self.camera_id}] Reader started: {self.connection_string}")
         cap = cv2.VideoCapture(self.connection_string)
+
+        # Best-effort low-latency tuning (backend dependent; safe if unsupported)
+        try:
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except Exception:
+            pass
         
         while not self.stop_event.is_set():
             ret, frame = cap.read()
             if not ret:
                 print(f"⚠️ [Stream {self.camera_id}] Frame read failed, reconnecting...")
+                with self.raw_frame_lock:
+                    self.raw_frame = None
                 cap.release()
-                time.sleep(2) # Wait before reconnect
+                time.sleep(0.3) # Short reconnect interval keeps preview responsive
                 cap = cv2.VideoCapture(self.connection_string)
+                try:
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                except Exception:
+                    pass
                 continue
             
             # Update latest raw frame atomically
@@ -98,11 +132,10 @@ class StreamContext:
     def _run_inference(self):
         """Runs inference at target FPS"""
         # Load model locally in thread
-        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        device = self._resolve_device(self.device)
         print(f"🧠 [Stream {self.camera_id}] Loading model {self.model_id} on {device}...")
         try:
-            self.model = YOLO(self.model_path)
-            self.model.to(device)
+            self.model = stream_manager.get_model(self.model_path, device)
         except Exception as e:
             print(f"❌ [Stream {self.camera_id}] Failed to load model: {e}")
             self.is_running = False
@@ -164,11 +197,13 @@ class StreamContext:
                     if not is_visible:
                         continue
                     
-                    # Check for defect (anything not 'scratch' or 'dent' is pass? 
-                    # Actually typically defect models detect defects. 
-                    # Let's assume ANY detection is a "defect" for now unless specified.
-                    # Or if label is NOT "OK".
-                    if label.lower() != "ok":
+                    # Check for defect based on class config
+                    is_defect = False
+                    with self.config_lock:
+                        if label in self.class_config:
+                            is_defect = self.class_config[label].get('isDefect', False)
+                    
+                    if is_defect:
                         has_defects = True
                     
                     # Normalize coordinates
@@ -189,10 +224,96 @@ class StreamContext:
                         "color": color_hex
                     })
             
+            # Tracking Algorithm (Frame Debouncing)
+            # Match current frame detections to tracked objects
+            matched_tracker_ids = set()
+            new_log_events = [] # Detections that just became "stable" this frame
+            
+            for d in detections:
+                c_id = d["classId"]
+                bbox = d["boundingBox"]
+                bx, by, bw, bh = bbox["x"], bbox["y"], bbox["width"], bbox["height"]
+                cx, cy = bx + bw/2, by + bh/2
+                
+                # Find best matching existing tracker
+                best_match_id = None
+                min_dist = float('inf')
+                
+                for tid, t_obj in self.tracker_objects.items():
+                    if tid in matched_tracker_ids or t_obj['class_id'] != c_id:
+                        continue
+                    
+                    # Simple centroid distance matching
+                    tcx, tcy = t_obj['cx'], t_obj['cy']
+                    dist = ((cx - tcx)**2 + (cy - tcy)**2)**0.5
+                    
+                    # Threshold for matching (e.g., max distance allowed to move per frame)
+                    # Let's say it can't move more than the width/height of itself per frame roughly
+                    if dist < max(bw, bh) * 1.5 and dist < min_dist:
+                        min_dist = dist
+                        best_match_id = tid
+                        
+                if best_match_id is not None:
+                    # Update existing
+                    t_obj = self.tracker_objects[best_match_id]
+                    t_obj['cx'], t_obj['cy'] = cx, cy
+                    t_obj['frames_present'] += 1
+                    t_obj['frames_missing'] = 0
+                    t_obj['last_bbox'] = bbox
+                    matched_tracker_ids.add(best_match_id)
+                    
+                    # Check if it just became stable
+                    if t_obj['frames_present'] >= self.debounce_frames_enter and not t_obj['logged']:
+                        t_obj['logged'] = True
+                        new_log_events.append(d)
+                        
+                        # Update persistent stream stats on every new stable detection
+                        self.total_inspections += 1
+                        
+                        # Check if this specific object is a defect
+                        obj_label = d["className"]
+                        obj_is_defect = False
+                        with self.config_lock:
+                            if obj_label in self.class_config:
+                                obj_is_defect = self.class_config[obj_label].get('isDefect', False)
+                        
+                        if obj_is_defect:
+                            self.fail_count += 1
+                        else:
+                            self.pass_count += 1
+
+                        # Update per-class counters
+                        self.class_counts[obj_label] = self.class_counts.get(obj_label, 0) + 1
+                else:
+                    # Create new tracker
+                    self.tracker_id_counter += 1
+                    self.tracker_objects[self.tracker_id_counter] = {
+                        'class_id': c_id,
+                        'cx': cx,
+                        'cy': cy,
+                        'frames_present': 1,
+                        'frames_missing': 0,
+                        'logged': False,
+                        'last_bbox': bbox
+                    }
+                    
+            # Update missing and clean up old trackers
+            lost_ids = []
+            for tid, t_obj in self.tracker_objects.items():
+                if tid not in matched_tracker_ids:
+                    t_obj['frames_missing'] += 1
+                    if t_obj['frames_missing'] >= self.debounce_frames_exit:
+                        lost_ids.append(tid)
+                        
+            for tid in lost_ids:
+                del self.tracker_objects[tid]
+
             # Prepare payload
             import uuid
             
-            # Calculate class counts
+            # Use only NEW stable events for the log count payload.
+            # However, for live drawing/realtime count, we still want ALL detections.
+            # We will separate "realtime_detections" and "log_events"
             class_counts = {}
             for d in detections:
                 c_name = d["className"]
@@ -205,7 +326,7 @@ class StreamContext:
                 "model_id": self.model_id,
                 "fps": round(self.fps_tracker, 2),
                 "inference_ms": round(self.inference_ms, 2),
-                "has_detections": len(detections) > 0,
+                "has_detections": len(new_log_events) > 0,
                 "detections": [
                     {
                         "class_id": d["classId"],
@@ -217,17 +338,18 @@ class StreamContext:
                             "width": int(d["boundingBox"]["width"]),
                             "height": int(d["boundingBox"]["height"])
                         }
-                    } for d in detections
+                    } for d in new_log_events
                 ],
-                "total_count": len(detections),
+                "total_count": len(new_log_events),
                 "class_counts": class_counts
             }
 
             # Update stats
             stream_manager.update_stats(has_defects)
             
-            # Save to context
+            # Save all raw detections to context for WebRTC rendering
             self.latest_detections = detections
+            self.latest_log_events = new_log_events
             self.last_update = datetime.now()
 
             # Publish to MQTT based on mode
@@ -260,11 +382,18 @@ class StreamContext:
                 # Color is already processed in detection loop
                 color_hex = det['color']
 
-                # Convert hex to BGR
+                # Convert hex to BGR properly handling different formats
                 color_hex = color_hex.lstrip('#')
-                r = int(color_hex[0:2], 16)
-                g = int(color_hex[2:4], 16)
-                b = int(color_hex[4:6], 16)
+                if len(color_hex) == 6:
+                    r = int(color_hex[0:2], 16)
+                    g = int(color_hex[2:4], 16)
+                    b = int(color_hex[4:6], 16)
+                elif len(color_hex) == 3:
+                    r = int(color_hex[0]*2, 16)
+                    g = int(color_hex[1]*2, 16)
+                    b = int(color_hex[2]*2, 16)
+                else:
+                    r, g, b = 0, 255, 0 # fallback green
                 color = (b, g, r) # BGR
                 
                 cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
@@ -297,6 +426,42 @@ class StreamContext:
                 
         print(f"🛑 [Stream {self.camera_id}] Inference stopped")
 
+    def _resolve_device(self, requested: Optional[str]) -> str:
+        """Resolve requested device into a runtime-safe device string."""
+        fallback = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        if not requested:
+            return fallback
+
+        req = str(requested).strip().lower()
+        if req in {"", "auto", "default", "gpu", "accelerator"}:
+            return fallback
+        if req == "cpu":
+            return "cpu"
+
+        if req.isdigit():
+            idx = int(req)
+            if torch.cuda.is_available() and 0 <= idx < torch.cuda.device_count():
+                return f"cuda:{idx}"
+            return fallback
+
+        if req == "cuda":
+            return "cuda:0" if torch.cuda.is_available() else fallback
+
+        if req.startswith("cuda"):
+            if not torch.cuda.is_available():
+                return fallback
+            suffix = req.split(":", 1)[1] if ":" in req else req.replace("cuda", "", 1)
+            if suffix == "":
+                return "cuda:0"
+            if not suffix.isdigit():
+                return fallback
+            idx = int(suffix)
+            if 0 <= idx < torch.cuda.device_count():
+                return f"cuda:{idx}"
+            return fallback
+
+        return fallback
+
 
 class StreamManager:
     def __init__(self):
@@ -308,9 +473,24 @@ class StreamManager:
         }
         self.stats_lock = threading.Lock()
         
+        self.model_cache = {} # Dict[str, YOLO]
+        self.model_cache_lock = threading.Lock()
+        
         # Start MQTT Service
         from app.services.mqtt_service import mqtt_service
         mqtt_service.start()
+        
+    def get_model(self, model_path: str, device: str) -> YOLO:
+        with self.model_cache_lock:
+            key = f"{model_path}_{device}"
+            if key not in self.model_cache:
+                print(f"📦 [Cache] Loading new YOLO model into memory: {model_path} -> {device}")
+                model = YOLO(model_path)
+                model.to(device)
+                self.model_cache[key] = model
+            else:
+                print(f"⚡ [Cache] Reusing existing YOLO model from memory: {model_path} -> {device}")
+            return self.model_cache[key]
         
     def update_stats(self, has_defects: bool):
         with self.stats_lock:
@@ -327,7 +507,8 @@ class StreamManager:
                 camera_id, model_id, model_path, connection_string,
                 confidence=kwargs.get('confidence', 0.5),
                 iou=kwargs.get('iou', 0.45),
-                fps=kwargs.get('fps', 10)
+                fps=kwargs.get('fps', 10),
+                device=kwargs.get('device', 'auto')
             )
             self.streams[key] = stream
             stream.start()
@@ -337,6 +518,7 @@ class StreamManager:
             new_fps = kwargs.get('fps', 10)
             new_conf = kwargs.get('confidence', 0.5)
             new_iou = kwargs.get('iou', 0.45)
+            new_device = kwargs.get('device', 'auto')
             
             if stream.fps != new_fps:
                 print(f"⚡ [Stream {camera_id}] Updating FPS: {stream.fps} -> {new_fps}")
@@ -347,6 +529,9 @@ class StreamManager:
                 
             if stream.iou != new_iou:
                 stream.iou = new_iou
+
+            if stream.device != new_device:
+                stream.device = new_device
                 
             # Ensure it's running (in case it crashed or was stopped but not deleted?)
             if not stream.is_running:
@@ -361,12 +546,23 @@ class StreamManager:
             del self.streams[key]
 
     def update_stream_config(self, camera_id: str, model_id: str, config: Dict):
-        """Updates the class configuration for a specific stream"""
+        """Updates the class configuration and thresholds for a specific stream"""
         key = f"{camera_id}_{model_id}"
         if key in self.streams:
             stream = self.streams[key]
+            
+            # Update global thresholds if present
+            if 'confidence' in config:
+                stream.confidence = float(config.pop('confidence'))
+            if 'iou' in config:
+                stream.iou = float(config.pop('iou'))
+            if 'frame_buffer' in config:
+                val = int(config.pop('frame_buffer'))
+                stream.debounce_frames_enter = val
+                stream.debounce_frames_exit = val * 5
+                
             with stream.config_lock:
-                # Merge new config with existing
+                # Merge new config with existing class config
                 # Config format: { 'class_name': { 'visible': bool, 'color': '#HEX' } }
                 for class_name, settings in config.items():
                     if class_name not in stream.class_config:

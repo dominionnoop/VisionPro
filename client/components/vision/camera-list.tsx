@@ -1,126 +1,113 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Camera, CameraProtocol } from "@/types/vision";
 import PlusIcon from "@/components/icons/plus";
-import CameraIcon from "@/components/icons/camera";
+import MonitorIcon from "@/components/icons/monitor";
 import { CameraDialog } from "./camera-dialog";
-import { CameraSettingsDialog } from "./camera-settings-dialog";
-import { CameraPreviewDialog } from "./camera-preview-dialog";
-import { WebCameraRelay } from "./web-camera-relay";
+import {
+  createCamera,
+  updateCamera,
+  deleteCamera,
+  fetchCameras,
+  saveCameraHttpReachability,
+} from "@/data/vision-api";
 
 interface CameraListProps {
   cameras: Camera[];
 }
 
 export function CameraList({ cameras: initialCameras }: CameraListProps) {
-  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [cameras, setCameras] = useState(initialCameras);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
   const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
-  const [selectedCamera, setSelectedCamera] = useState<Camera | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [previewCamera, setPreviewCamera] = useState<Camera | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCameras();
+    let active = true;
+
+    const refreshCameras = async () => {
+      const latest = await fetchCameras();
+      if (!active) return;
+
+      if (latest) {
+        setCameras(latest);
+        saveCameraHttpReachability(latest);
+      } else {
+        saveCameraHttpReachability(cameras);
+      }
+    };
+
+    void refreshCameras();
+    return () => {
+      active = false;
+    };
+    // run once on tab/component open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchCameras = async () => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/vision/cameras`);
-      if (res.ok) {
-        const data = await res.json();
-        setCameras(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch cameras:", error);
-    }
-  };
-
   const handleCreateCamera = async (data: Partial<Camera>) => {
-    const formData = new FormData();
-    formData.append("name", data.name || "New Camera");
-    formData.append("protocol", data.protocol || "GigE");
-    formData.append("connection_string", data.connectionString || data.connection_string || "");
-    formData.append("mode", data.mode || "auto");
+    const created = await createCamera({
+      name: data.name || "New Camera",
+      protocol: data.protocol || "GigE",
+      connectionString: data.connectionString || "",
+      mode: data.mode || "auto",
+    });
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/vision/cameras`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.ok) {
-        fetchCameras();
-        setDialogOpen(false);
-      } else {
-        const errText = await res.text();
-        console.error("Failed to create camera:", res.status, errText);
-        alert(`Failed to create camera: ${res.status} - ${errText}`);
-      }
-    } catch (error) {
-      console.error("Error creating camera:", error);
-      alert(`Error creating camera: ${error}`);
+    if (created) {
+      const next = [created, ...cameras];
+      setCameras(next);
+      saveCameraHttpReachability(next);
     }
+    setDialogOpen(false);
   };
 
   const handleEditCamera = async (data: Partial<Camera>) => {
     if (!editingCamera) return;
 
-    const formData = new FormData();
-    if (data.name) formData.append("name", data.name);
-    if (data.protocol) formData.append("protocol", data.protocol);
-    if (data.connectionString) formData.append("connection_string", data.connectionString);
-    if (data.mode) formData.append("mode", data.mode);
+    const updated = await updateCamera(editingCamera.id, {
+      name: data.name,
+      protocol: data.protocol,
+      connectionString: data.connectionString,
+      mode: data.mode,
+    });
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/vision/cameras/${editingCamera.id}`, {
-        method: "PUT",
-        body: formData,
-      });
-
-      if (res.ok) {
-        fetchCameras();
-        setEditingCamera(null);
-        setDialogOpen(false);
+    if (updated) {
+      const latest = await fetchCameras();
+      if (latest) {
+        setCameras(latest);
+        saveCameraHttpReachability(latest);
+      } else {
+        const next = cameras.map((c) => (c.id === editingCamera.id ? updated : c));
+        setCameras(next);
+        saveCameraHttpReachability(next);
       }
-    } catch (error) {
-      console.error("Error updating camera:", error);
     }
-  };
 
-  const handleUpdateSettings = (settings: Camera["settings"]) => {
-    // Settings update logic not yet implemented in backend, keeping mock for now for settings UI
-    if (!selectedCamera) return;
-    setCameras(
-      cameras.map((c) =>
-        c.id === selectedCamera.id ? { ...c, settings } : c
-      )
-    );
-    setSelectedCamera(null);
-    setSettingsDialogOpen(false);
+    setEditingCamera(null);
+    setDialogOpen(false);
   };
 
   const handleDeleteCamera = async (cameraId: string) => {
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/vision/cameras/${cameraId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        fetchCameras();
-      }
-    } catch (error) {
-      console.error("Error deleting camera:", error);
+    const ok = await deleteCamera(cameraId);
+    if (ok) {
+      const next = cameras.filter((c) => c.id !== cameraId);
+      setCameras(next);
+      saveCameraHttpReachability(next);
     }
   };
 
   const handleTestConnection = (camera: Camera) => {
     setPreviewCamera(camera);
+    setPreviewKey(Date.now());
+    setPreviewError(camera.status !== "connected" ? "HTTP is not available." : null);
     setPreviewOpen(true);
   };
 
@@ -155,7 +142,7 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
       <Card className="border-border/50">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle className="text-xl font-display">Camera List</CardTitle>
+            <CardTitle className="text-xl font-display">Vision Source List</CardTitle>
             <Button
               onClick={() => {
                 setEditingCamera(null);
@@ -163,16 +150,16 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
               }}
             >
               <PlusIcon className="size-4 mr-2" />
-              Add Camera
+              Add Vision Source
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {cameras.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <CameraIcon className="size-12 mb-4 opacity-50" />
-              <p className="text-lg">No cameras configured</p>
-              <p className="text-sm">Add a camera to start capturing images</p>
+              <MonitorIcon className="size-12 mb-4 opacity-50" />
+              <p className="text-lg">No vision sources configured</p>
+              <p className="text-sm">Add a vision source to start capturing images</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -183,7 +170,7 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
-                      <CameraIcon className="size-6" />
+                      <MonitorIcon className="size-6" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -196,15 +183,13 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {camera.connection_string}
+                        {camera.connectionString}
                       </p>
                       <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground/70">
                         <span>
-                          {typeof camera.settings.resolution === 'object' && camera.settings.resolution !== null
-                            ? `${(camera.settings.resolution as any).width}x${(camera.settings.resolution as any).height}`
-                            : camera.settings.resolution || "1920x1080"}
+                          {camera.settings.resolution.width}x{camera.settings.resolution.height}
                         </span>
-                        <span>{camera.settings.fps || 30} FPS</span>
+                        <span>{camera.settings.frameRate} FPS</span>
                         <span>Mode: {camera.mode}</span>
                         {camera.mode === "snapshot" && camera.triggerSource && (
                           <span>Trigger: {camera.triggerSource}</span>
@@ -219,16 +204,6 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
                       onClick={() => handleTestConnection(camera)}
                     >
                       Test
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedCamera(camera);
-                        setSettingsDialogOpen(true);
-                      }}
-                    >
-                      Settings
                     </Button>
                     <Button
                       variant="outline"
@@ -264,20 +239,44 @@ export function CameraList({ cameras: initialCameras }: CameraListProps) {
         mode={editingCamera ? "edit" : "create"}
       />
 
-      <CameraSettingsDialog
-        open={settingsDialogOpen}
-        onOpenChange={setSettingsDialogOpen}
-        camera={selectedCamera}
-        onSave={handleUpdateSettings}
-      />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">
+              Vision Source Preview {previewCamera ? `- ${previewCamera.name}` : ""}
+            </DialogTitle>
+          </DialogHeader>
 
-      <CameraPreviewDialog
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        camera={previewCamera}
-      />
-
-      <WebCameraRelay cameras={cameras} enabled={!dialogOpen} />
+          {previewCamera ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground break-all">
+                {previewCamera.connectionString}
+              </p>
+              {previewError ? (
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
+                  {previewError}
+                </div>
+              ) : (
+                <div className="rounded-lg border bg-muted/30 p-2">
+                  <img
+                    src={`${previewCamera.connectionString}${previewCamera.connectionString.includes("?") ? "&" : "?"}t=${previewKey}`}
+                    alt={`Preview from ${previewCamera.name}`}
+                    className="w-full max-h-[70vh] object-contain rounded-md"
+                    onError={() => {
+                      setPreviewError("HTTP is not available.");
+                      setCameras(
+                        cameras.map((c) =>
+                          c.id === previewCamera.id ? { ...c, status: "error" } : c
+                        )
+                      );
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -63,9 +63,12 @@ module.exports = {
           ring: "hsl(var(--sidebar-ring))",
         },
       },
-      fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
-        mono: ["var(--font-roboto-mono)", "monospace"],
+      spacing: {
+        gap: "var(--gap)",
+        sides: "var(--sides)",
+        "header-mobile": "var(--header-mobile)",
+        "header-height": "var(--header-height)",
+        15: "3.75rem",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -87,11 +90,16 @@ module.exports = {
           "50%": { opacity: "0.8", transform: "scale(1.05) translateY(-2px)" },
           "75%": { opacity: "0.6", transform: "scale(1.02) translateY(-1px)" },
         },
+        "scan": {
+          "0%, 100%": { top: "0%" },
+          "50%": { top: "100%" },
+        },
       },
       animation: {
         "marquee-up": "marquee-up 80s linear infinite",
         "marquee-down": "marquee-down 80s linear infinite",
         "marquee-pulse": "marquee-pulse 8s ease-in-out infinite",
+        "scan": "scan 2.5s ease-in-out infinite",
       },
     },
   },

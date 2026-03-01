@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Copy } from "lucide-react";
 import type { DatabaseAction, ModbusAction, MQTTAction } from "@/types/vision";
 
 interface ActionSettingsState {
@@ -176,141 +177,37 @@ export function ActionSettings() {
         </CardContent>
       </Card>
 
-      {/* Modbus Action */}
+      {/* API Output */}
       <Card className="border-border/50">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-display flex items-center gap-2">
-              Modbus Output
-              <Badge
-                variant="outline"
-                className={
-                  settings.modbus.enabled
-                    ? "bg-success/20 text-success border-success/30"
-                    : "bg-muted text-muted-foreground"
-                }
-              >
-                {settings.modbus.enabled ? "Enabled" : "Disabled"}
+              HTTP API Output
+              <Badge variant="outline" className="bg-success/20 text-success border-success/30">
+                Active
               </Badge>
             </CardTitle>
-            <Button
-              variant={settings.modbus.enabled ? "default" : "outline"}
-              size="sm"
-              onClick={() =>
-                setSettings({
-                  ...settings,
-                  modbus: { ...settings.modbus, enabled: !settings.modbus.enabled },
-                })
-              }
-            >
-              {settings.modbus.enabled ? "Disable" : "Enable"}
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Host</label>
-              <Input
-                value={settings.modbus.host}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    modbus: { ...settings.modbus, host: e.target.value },
-                  })
-                }
-                placeholder="192.168.1.200"
-                disabled={!settings.modbus.enabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Port</label>
-              <Input
-                type="number"
-                value={settings.modbus.port}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    modbus: { ...settings.modbus, port: Number(e.target.value) },
-                  })
-                }
-                disabled={!settings.modbus.enabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Unit ID</label>
-              <Input
-                type="number"
-                value={settings.modbus.unitId}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    modbus: { ...settings.modbus, unitId: Number(e.target.value) },
-                  })
-                }
-                disabled={!settings.modbus.enabled}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Register Address</label>
-              <Input
-                type="number"
-                value={settings.modbus.registerAddress}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    modbus: {
-                      ...settings.modbus,
-                      registerAddress: Number(e.target.value),
-                    },
-                  })
-                }
-                disabled={!settings.modbus.enabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Register Type</label>
-              <div className="flex gap-2">
-                {(["coil", "holding"] as const).map((type) => (
-                  <Button
-                    key={type}
-                    type="button"
-                    variant={
-                      settings.modbus.registerType === type ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setSettings({
-                        ...settings,
-                        modbus: { ...settings.modbus, registerType: type },
-                      })
-                    }
-                    disabled={!settings.modbus.enabled}
-                    className="flex-1 capitalize"
-                  >
-                    {type}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            You can retrieve real-time inference results by making a GET request to the following endpoint.
+            Replace <code className="bg-muted px-1 rounded">:camera_id</code> and <code className="bg-muted px-1 rounded">:model_id</code> with your respective IDs.
+          </p>
+          <div className="flex items-center justify-between gap-2 p-2 bg-muted/50 rounded-md border border-border">
+            <code className="text-xs text-muted-foreground truncate flex-1 font-mono">
+              {`${typeof window !== 'undefined' ? window.location.origin : ''}/api/vision/inference/results/raw`}
+            </code>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => handleTestConnection("modbus")}
-              disabled={!settings.modbus.enabled || testStatus.modbus === "testing"}
+              className="h-8 w-8 p-0 shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/api/vision/inference/results/raw`);
+              }}
             >
-              {testStatus.modbus === "testing" ? "Testing..." : "Test Connection"}
+              <Copy className="h-4 w-4" />
             </Button>
-            {testStatus.modbus === "success" && (
-              <Badge className="bg-success/20 text-success">Connected</Badge>
-            )}
-            {testStatus.modbus === "error" && (
-              <Badge className="bg-destructive/20 text-destructive">Failed</Badge>
-            )}
           </div>
         </CardContent>
       </Card>

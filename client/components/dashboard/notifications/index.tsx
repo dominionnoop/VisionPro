@@ -27,7 +27,7 @@ export default function Notifications({
 
   const markAsRead = (id: string) => {
     setNotifications((prev) =>
-      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)),
     );
   };
 
@@ -58,7 +58,7 @@ export default function Notifications({
         )}
       </CardHeader>
 
-      <CardContent className="bg-accent p-1.5 overflow-hidden">
+      <CardContent className="bg-transparent p-1.5 overflow-hidden">
         <div className="space-y-2">
           <AnimatePresence initial={false} mode="popLayout">
             {displayedNotifications.map((notification) => (

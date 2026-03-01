@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { ChatConversation } from "@/types/chat";
-import { mockChatData } from "@/data/chat-mock";
+import { useChatState } from "./use-chat-state";
 import ChatContact from "./chat-contact";
 
 interface ChatExpandedProps {
@@ -42,8 +42,9 @@ export default function ChatExpanded({
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto max-h-80">
         {conversations.map((conversation) => {
+          const currentUser = useChatState().currentUser;
           const otherUser = conversation.participants.find(
-            (p) => p.id !== mockChatData.currentUser.id
+            (p) => p.id !== currentUser?.id
           );
           if (!otherUser) return null;
 

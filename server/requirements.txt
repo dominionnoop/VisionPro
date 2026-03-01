@@ -28,3 +28,5 @@ async-timeout>=4.0.3
 email-validator>=2.0.0
 aiohttp>=3.9.0
 paho-mqtt>=1.6.1
+aiortc>=1.8.0
+av>=12.3.0

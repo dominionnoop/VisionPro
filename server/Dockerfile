@@ -1,8 +1,13 @@
 # ===============================
 # STAGE 1: Collect wheels offline
 # ===============================
+# Define global ARGs before any FROM
+ARG CUDA_VERSION="12.1.0"
+
 # Use a python image to download wheels
 FROM python:3.11.9-slim-bookworm AS wheels
+
+ARG PYTORCH_CU_VERSION="cu121"
 
 ENV PIP_NO_CACHE_DIR=1
 WORKDIR /wheels
@@ -13,15 +18,17 @@ COPY requirements.txt .
 
 # Download packages to /wheels
 # Note: --extra-index-url for PyTorch (matching reference logic)
-RUN pip download --dest /wheels --extra-index-url https://download.pytorch.org/whl/cu121 \
+RUN pip download --dest /wheels --extra-index-url https://download.pytorch.org/whl/${PYTORCH_CU_VERSION} \
     torch==2.3.1 torchvision==0.18.1 && \
-    pip download --dest /wheels -r requirements.txt
+    pip download --dest /wheels -r requirements.txt && \
+    rm -rf /root/.cache/pip
 
 
 # =======================================
 # STAGE 2: CUDA runtime + install offline
 # =======================================
-FROM nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
+ARG CUDA_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -42,6 +49,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.11 /usr/bin/python \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip manually to ensure compatibility
@@ -54,7 +62,8 @@ COPY --from=wheels /wheels /wheels
 RUN pip install --no-index --find-links=/wheels \
     torch==2.3.1 torchvision==0.18.1 && \
     pip install --no-index --find-links=/wheels -r /wheels/requirements.txt && \
-    rm -rf /wheels
+    rm -rf /wheels && \
+    rm -rf /root/.cache/pip
 
 # Copy application code (This layer changes frequently, so it's last)
 COPY . .

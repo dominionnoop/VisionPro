@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useChatState } from "./use-chat-state";
-import { mockChatData } from "@/data/chat-mock";
 import { ChatStatusIndicator } from "./chat-status-indicator";
 import PlusIcon from "../icons/plus";
 import MinusIcon from "../icons/minus";
@@ -43,8 +42,9 @@ export function ChatHeader({
     variant === "mobile"
       ? false
       : chatState.state === "collapsed" && hasNewMessages;
+  const currentUser = useChatState().currentUser;
   const otherUser = activeConversation?.participants.find(
-    (p) => p.id !== mockChatData.currentUser.id
+    (p) => p.id !== currentUser?.id
   );
 
   const handleClick = () => {
